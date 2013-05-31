@@ -35,15 +35,18 @@ namespace ReqRep
         {
             _id = id;
             _token = token;
-            Task.Factory.StartNew(() => start(ctx));
+            var ready = new TaskCompletionSource<bool>();
+            Task.Factory.StartNew(() => start(ctx, ready));
+            ready.Task.Wait();
         }
 
-        private void start(ZmqContext ctx)
+        private void start(ZmqContext ctx, TaskCompletionSource<bool> ready)
         {
             using (var socket = ctx.CreateSocket(SocketType.REQ))
             {
                 socket.Connect("inproc://foo");
                 Console.WriteLine("Client {0} ready.", _id);
+                ready.SetResult(true);
 
                 while (_token.IsCancellationRequested == false)
                 {
@@ -67,15 +70,18 @@ namespace ReqRep
         {
             _id = id;
             _token = token;
-            Task.Factory.StartNew(() => start(ctx));
+            var ready = new TaskCompletionSource<bool>();
+            Task.Factory.StartNew(() => start(ctx, ready));
+            ready.Task.Wait();
         }
 
-        private void start(ZmqContext ctx)
+        private void start(ZmqContext ctx, TaskCompletionSource<bool> ready)
         {
             using (var socket = ctx.CreateSocket(SocketType.REP))
             {
                 socket.Bind("inproc://foo");
                 Console.WriteLine("Server {0} ready and listening on foo.", _id);
+                ready.SetResult(true);
 
                 while (_token.IsCancellationRequested == false)
                 {
