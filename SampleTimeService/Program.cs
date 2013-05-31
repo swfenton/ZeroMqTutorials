@@ -49,7 +49,6 @@ namespace ReqRep
                 {
                     var message = string.Format("[{0}]: What's the time?", _id);
                     socket.Send(message, Encoding.ASCII);
-                    socket.Send(message, Encoding.ASCII);
                     var result = socket.Receive(Encoding.ASCII);
                     Console.WriteLine("[{0}]: Got {1}.", _id, result);
 
