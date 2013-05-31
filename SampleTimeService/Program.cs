@@ -9,6 +9,13 @@ using ZeroMQ;
 
 namespace ReqRep
 {
+    public static class Endpoints
+    {
+        public const string InProc = "inproc://foo";
+        public const string TCP = "tcp://127.0.0.1:1024";
+        public static readonly string MyEndpoint = TCP;
+    }
+
     class Program
     {
         static void Main(string[] args)
@@ -44,7 +51,7 @@ namespace ReqRep
         {
             using (var socket = ctx.CreateSocket(SocketType.REQ))
             {
-                socket.Connect("inproc://foo");
+                socket.Connect(Endpoints.MyEndpoint);
                 Console.WriteLine("Client {0} ready.", _id);
                 ready.SetResult(true);
 
@@ -79,7 +86,7 @@ namespace ReqRep
         {
             using (var socket = ctx.CreateSocket(SocketType.REP))
             {
-                socket.Bind("inproc://foo");
+                socket.Bind(Endpoints.MyEndpoint);
                 Console.WriteLine("Server {0} ready and listening on foo.", _id);
                 ready.SetResult(true);
 
@@ -101,11 +108,13 @@ namespace ReqRep
         public Component(ZmqContext ctx)
         {
             _tokenSource = new CancellationTokenSource();
-            new Server("server1", _tokenSource.Token, ctx);
-            Task.Delay(3000).Wait();
             new Client("client1", _tokenSource.Token, ctx);
             Task.Delay(1000).Wait();
             new Client("client2", _tokenSource.Token, ctx);
+
+
+            Task.Delay(3000).Wait();
+            new Server("server1", _tokenSource.Token, ctx);
         }
 
         private bool _disposed;
