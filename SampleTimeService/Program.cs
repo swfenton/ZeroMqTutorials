@@ -37,11 +37,13 @@ namespace ReqRep
     {
         private readonly string _id;
         private readonly CancellationToken _token;
+        private readonly string _topic;
 
-        public Client(string id, CancellationToken token, ZmqContext ctx)
+        public Client(string id, CancellationToken token, ZmqContext ctx, string topic)
         {
             _id = id;
             _token = token;
+            _topic = topic;
             var ready = new TaskCompletionSource<bool>();
             Task.Factory.StartNew(() => start(ctx, ready));
             ready.Task.Wait();
@@ -49,20 +51,19 @@ namespace ReqRep
 
         private void start(ZmqContext ctx, TaskCompletionSource<bool> ready)
         {
-            using (var socket = ctx.CreateSocket(SocketType.PUSH))
+            using (var socket = ctx.CreateSocket(SocketType.SUB))
             {
+                socket.Subscribe(Encoding.ASCII.GetBytes(_topic));
                 socket.Connect(Endpoints.MyEndpoint);
+
                 Console.WriteLine("Client {0} ready.", _id);
                 ready.SetResult(true);
 
                 while (_token.IsCancellationRequested == false)
                 {
-                    var message = string.Format("[{0}]: What's the time?", _id);
-                    socket.Send(message, Encoding.ASCII);
-                    //var result = socket.Receive(Encoding.ASCII);
-                    //Console.WriteLine("[{0}]: Got {1}.", _id, result);
-
-                    Task.Delay(2000).Wait(_token);
+                    var topic = socket.Receive(Encoding.ASCII);
+                    var message = socket.Receive(Encoding.ASCII);
+                    Console.WriteLine("[{0}]: Got '{1}'", _id, message);
                 }
             }
         }
@@ -84,7 +85,9 @@ namespace ReqRep
 
         private void start(ZmqContext ctx, TaskCompletionSource<bool> ready)
         {
-            using (var socket = ctx.CreateSocket(SocketType.PULL))
+            var rand = new Random(DateTime.Now.Millisecond);
+
+            using (var socket = ctx.CreateSocket(SocketType.PUB))
             {
                 socket.Bind(Endpoints.MyEndpoint);
                 Console.WriteLine("Server {0} ready and listening on foo.", _id);
@@ -92,10 +95,14 @@ namespace ReqRep
 
                 while (_token.IsCancellationRequested == false)
                 {
-                    var message = socket.Receive(Encoding.ASCII);
-                    Console.WriteLine("[{0}]: Got {1}", _id, message);
-                    //var result = DateTime.Now.ToString(CultureInfo.InvariantCulture);
-                    //socket.Send(result, Encoding.ASCII);
+                    var topic = (rand.Next(1, 10) > 5) ? "weather" : "sports";
+
+                    var message = string.Format("BREAKING NEWS: {0}.", topic);
+                        
+                    socket.SendMore(topic, Encoding.ASCII);
+                    socket.Send(message, Encoding.ASCII);
+                    
+                    Task.Delay(2000).Wait();
                 }
             }
         }
@@ -108,9 +115,9 @@ namespace ReqRep
         public Component(ZmqContext ctx)
         {
             _tokenSource = new CancellationTokenSource();
-            new Client("client1", _tokenSource.Token, ctx);
+            new Client("client1", _tokenSource.Token, ctx, "weather");
             Task.Delay(1000).Wait();
-            new Client("client2", _tokenSource.Token, ctx);
+            new Client("client2", _tokenSource.Token, ctx, "sports");
 
             
             Task.Delay(3000).Wait();
