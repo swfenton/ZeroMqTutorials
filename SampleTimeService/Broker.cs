@@ -49,6 +49,7 @@ namespace ReqRep
 
             while (hasMore)
             {
+                // no buffer overflow safety here, need to add that
                 var number = source.Receive(_buffer);
                 hasMore = source.ReceiveMore;
 
