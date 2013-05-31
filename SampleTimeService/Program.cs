@@ -49,7 +49,7 @@ namespace ReqRep
 
         private void start(ZmqContext ctx, TaskCompletionSource<bool> ready)
         {
-            using (var socket = ctx.CreateSocket(SocketType.REQ))
+            using (var socket = ctx.CreateSocket(SocketType.PUSH))
             {
                 socket.Connect(Endpoints.MyEndpoint);
                 Console.WriteLine("Client {0} ready.", _id);
@@ -59,8 +59,8 @@ namespace ReqRep
                 {
                     var message = string.Format("[{0}]: What's the time?", _id);
                     socket.Send(message, Encoding.ASCII);
-                    var result = socket.Receive(Encoding.ASCII);
-                    Console.WriteLine("[{0}]: Got {1}.", _id, result);
+                    //var result = socket.Receive(Encoding.ASCII);
+                    //Console.WriteLine("[{0}]: Got {1}.", _id, result);
 
                     Task.Delay(2000).Wait(_token);
                 }
@@ -84,7 +84,7 @@ namespace ReqRep
 
         private void start(ZmqContext ctx, TaskCompletionSource<bool> ready)
         {
-            using (var socket = ctx.CreateSocket(SocketType.REP))
+            using (var socket = ctx.CreateSocket(SocketType.PULL))
             {
                 socket.Bind(Endpoints.MyEndpoint);
                 Console.WriteLine("Server {0} ready and listening on foo.", _id);
@@ -94,8 +94,8 @@ namespace ReqRep
                 {
                     var message = socket.Receive(Encoding.ASCII);
                     Console.WriteLine("[{0}]: Got {1}", _id, message);
-                    var result = DateTime.Now.ToString(CultureInfo.InvariantCulture);
-                    socket.Send(result, Encoding.ASCII);
+                    //var result = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+                    //socket.Send(result, Encoding.ASCII);
                 }
             }
         }
@@ -112,7 +112,7 @@ namespace ReqRep
             Task.Delay(1000).Wait();
             new Client("client2", _tokenSource.Token, ctx);
 
-
+            
             Task.Delay(3000).Wait();
             new Server("server1", _tokenSource.Token, ctx);
         }
