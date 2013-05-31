@@ -116,12 +116,15 @@ namespace ReqRep
         {
             _tokenSource = new CancellationTokenSource();
             new Client("client1", _tokenSource.Token, ctx, "weather");
-            Task.Delay(1000).Wait();
+            Task.Delay(500).Wait();
             new Client("client2", _tokenSource.Token, ctx, "sports");
 
             
-            Task.Delay(3000).Wait();
+            Task.Delay(500).Wait();
             new Server("server1", _tokenSource.Token, ctx);
+
+            Task.Delay(5000).Wait();
+            new Client("client3", _tokenSource.Token, ctx, "");
         }
 
         private bool _disposed;
